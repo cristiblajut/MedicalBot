@@ -9,6 +9,7 @@ const SELECTORS = {
   eduContent: "#education-content",
   printPlan: "#print-plan",
   exportPlan: "#export-plan",
+  exportIcs: "#export-ics",
   clearData: "#clear-data",
   installBtn: "#install-btn",
   swStatus: "#sw-status",
@@ -104,7 +105,8 @@ function buildPlan(profile) {
 
   const proteinG = proteinTargetGPerDay(profile);
   const energyKcal = energyTargetKcalPerDay(profile);
-  const fluidsMl = 30 * profile.weightKg; // 25–35 ml/kg/day; choose 30 ml/kg as a simple average
+  const baseFluidsMl = 30 * profile.weightKg; // 25–35 ml/kg/day; choose 30 ml/kg as a simple average
+  const fluidsMl = profile.fluidRestricted === "Yes" ? null : baseFluidsMl;
 
   const risks = [];
   if (profile.bmi < 18.5) risks.push("underweight");
@@ -112,6 +114,8 @@ function buildPlan(profile) {
   if (profile.lowCapacity === "Yes") risks.push("low functional capacity");
   if (profile.anemia === "Yes") risks.push("anemia");
   if (profile.malnutritionRisk === "Yes") risks.push("malnutrition risk");
+  if (Number(profile.weightLossPct) >= 5) risks.push("recent weight loss");
+  if (profile.reducedIntake === "Yes") risks.push("reduced recent intake");
   if (profile.smoker === "Yes") risks.push("tobacco");
   if (profile.alcoholHigh === "Yes") risks.push("alcohol");
   if (profile.diabetes === "Yes") risks.push("diabetes");
@@ -143,27 +147,28 @@ function buildPlan(profile) {
   });
 
   // Nutrition module (ESPEN-aligned)
-  plan.modules.push({
-    id: "nutrition",
-    title: "Nutrition",
-    items: [
-      `Energy target: about ${energyKcal} kcal/day (estimate).`,
-      `Protein target: about ${proteinG} g/day (generally 1.2–1.5 g/kg/day).`,
-      profile.malnutritionRisk !== "No" ? "Consider oral nutrition supplements between meals if intake is inadequate." : "Prioritize whole foods; distribute protein across meals.",
-      "Include 25–35 ml/kg/day of fluids unless restricted.",
-      profile.magnitude !== "Minor" ? "Consider carbohydrate loading per protocol: evening before ~800 mL 12–14% CHO drink; 2–3 hours pre-op ~400 mL." : "",
-    ].filter(Boolean),
-  });
+  const nutritionItems = [
+    `Energy target: about ${energyKcal} kcal/day (estimate).`,
+    `Protein target: about ${proteinG} g/day (generally 1.2–1.5 g/kg/day).`,
+    profile.malnutritionRisk !== "No" || Number(profile.weightLossPct) >= 5 || profile.reducedIntake === "Yes"
+      ? "Use high-protein oral nutrition supplements between meals if intake is inadequate. Consider dietitian referral."
+      : "Prioritize whole foods; distribute protein across meals.",
+  ];
+  nutritionItems.push(
+    profile.fluidRestricted === "Yes"
+      ? "Fluid intake as per your clinician's restriction."
+      : "Include 25–35 ml/kg/day of fluids unless restricted."
+  );
+  if (profile.magnitude !== "Minor") {
+    nutritionItems.push("Consider carbohydrate loading per protocol: evening before ~800 mL 12–14% CHO drink; 2–3 hours pre-op ~400 mL.");
+  }
+  plan.modules.push({ id: "nutrition", title: "Nutrition", items: nutritionItems });
 
   // Lifestyle module
   if (profile.smoker === "Yes" || profile.alcoholHigh === "Yes") {
     const items = [];
-    if (profile.smoker === "Yes") {
-      items.push("Stop all nicotine now; even 2–4 weeks improves outcomes. Consider NRT or varenicline/bupropion per clinician.");
-    }
-    if (profile.alcoholHigh === "Yes") {
-      items.push("Stop or reduce alcohol ideally ≥4 weeks pre-op; seek support to prevent withdrawal and ensure safety.");
-    }
+    if (profile.smoker === "Yes") items.push("Stop all nicotine now; even 2–4 weeks improves outcomes. Consider NRT or varenicline/bupropion per clinician.");
+    if (profile.alcoholHigh === "Yes") items.push("Stop or reduce alcohol ideally ≥4 weeks pre-op; seek support to prevent withdrawal and ensure safety.");
     plan.modules.push({ id: "lifestyle", title: "Lifestyle risk reduction", items });
   }
 
@@ -171,31 +176,19 @@ function buildPlan(profile) {
   const medItems = [];
   if (profile.anemia !== "No") medItems.push("Check hemoglobin and iron studies; treat iron deficiency (oral or IV) per protocol.");
   if (profile.diabetes === "Yes") medItems.push("Optimize glucose; typical periop target 80–180 mg/dL (4.4–10 mmol/L). Consult your team for medication plan.");
+  if (profile.sglt2 === "Yes") medItems.push("SGLT2 inhibitor: discuss perioperative hold timing to reduce risk of ketoacidosis.");
+  if (profile.glp1 === "Yes") medItems.push("GLP-1 RA: discuss perioperative plan to reduce risk of delayed gastric emptying.");
+  if (profile.anticoag === "Yes") medItems.push("Anticoagulant/antiplatelet: confirm hold/bridging plan as per surgeon/anesthesia.");
   medItems.push("Medication review with clinician: anticoagulants, antiplatelets, SGLT2i, GLP-1 RA, ACE/ARB — follow local guidance.");
   plan.modules.push({ id: "medical", title: "Medical optimization", items: medItems });
 
-  // Education modules
+  // Education modules remain the same
   plan.education = [
-    {
-      title: "What is ERAS?",
-      body: "Enhanced Recovery After Surgery pathways reduce complications by optimizing nutrition, pain control, mobilization, and minimizing fasting and tubes."
-    },
-    {
-      title: "ESPEN nutrition basics",
-      body: "Screen for malnutrition risk. Typical targets: 25–30 kcal/kg/day and 1.2–1.5 g/kg/day protein (adjust per clinical context). Use supplements if needed."
-    },
-    {
-      title: "Fasting and carbohydrate loading",
-      body: "Unless told otherwise: clear fluids up to 2 hours before anesthesia, solids up to 6 hours. Many pathways use carbohydrate drinks the evening before and 2–3 hours pre-op."
-    },
-    {
-      title: "Pain, nausea, and bowel care",
-      body: "Multimodal analgesia reduces opioids; antiemetics prevent nausea; early oral intake and mobilization support bowel recovery."
-    },
-    {
-      title: "Early mobilization",
-      body: "Plan your first walk early after surgery as advised. Sitting up and walking multiple times daily reduces complications."
-    },
+    { title: "What is ERAS?", body: "Enhanced Recovery After Surgery pathways reduce complications by optimizing nutrition, pain control, mobilization, and minimizing fasting and tubes." },
+    { title: "ESPEN nutrition basics", body: "Screen for malnutrition risk. Typical targets: 25–30 kcal/kg/day and 1.2–1.5 g/kg/day protein (adjust per clinical context). Use supplements if needed." },
+    { title: "Fasting and carbohydrate loading", body: "Unless told otherwise: clear fluids up to 2 hours before anesthesia, solids up to 6 hours. Many pathways use carbohydrate drinks the evening before and 2–3 hours pre-op." },
+    { title: "Pain, nausea, and bowel care", body: "Multimodal analgesia reduces opioids; antiemetics prevent nausea; early oral intake and mobilization support bowel recovery." },
+    { title: "Early mobilization", body: "Plan your first walk early after surgery as advised. Sitting up and walking multiple times daily reduces complications." },
   ];
 
   // Checklists
@@ -204,6 +197,7 @@ function buildPlan(profile) {
     "Complete pre-op labs/EKG/clearances as instructed.",
     profile.smoker === "Yes" ? "Stop nicotine; use supports as arranged." : null,
     profile.alcoholHigh === "Yes" ? "Reduce/stop alcohol; monitor for withdrawal risk under medical guidance." : null,
+    Number(profile.weightLossPct) >= 5 || profile.reducedIntake === "Yes" ? "Track daily intake; add high-protein snacks/supplements to meet targets." : null,
     "Practice breathing/IMT and your exercise plan.",
     "Meal-prep high-protein options and stock oral supplements if needed.",
     "Arrange help at home and plan transport.",
@@ -212,6 +206,9 @@ function buildPlan(profile) {
   plan.checklists.dayOf = [
     "Follow fasting instructions (clear fluids up to 2 h; solids up to 6 h unless told otherwise).",
     profile.magnitude !== "Minor" ? "Take carbohydrate drink per protocol if instructed (2–3 h before)." : null,
+    profile.sglt2 === "Yes" ? "Confirm SGLT2i hold as instructed." : null,
+    profile.glp1 === "Yes" ? "Confirm GLP-1 RA plan as instructed." : null,
+    profile.anticoag === "Yes" ? "Confirm anticoagulant/antiplatelet plan as instructed." : null,
     "Take morning medications only as instructed.",
     "Bring ID, medication list, inhalers/devices, and plan for postoperative support.",
   ].filter(Boolean);
@@ -326,6 +323,109 @@ function bindPlanActions() {
     a.remove();
     URL.revokeObjectURL(url);
   });
+  const icsBtn = select(SELECTORS.exportIcs);
+  if (icsBtn) {
+    icsBtn.addEventListener("click", () => {
+      const plan = load(STORAGE_KEYS.plan);
+      if (!plan) return;
+      const ics = generateIcs(plan);
+      const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `prehab-schedule-${Date.now()}.ics`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+  }
+}
+
+function pad2(n) { return String(n).padStart(2, "0"); }
+function toUtcBasic(date) {
+  const y = date.getUTCFullYear();
+  const m = pad2(date.getUTCMonth() + 1);
+  const d = pad2(date.getUTCDate());
+  const hh = pad2(date.getUTCHours());
+  const mm = pad2(date.getUTCMinutes());
+  const ss = pad2(date.getUTCSeconds());
+  return `${y}${m}${d}T${hh}${mm}${ss}Z`;
+}
+
+function generateIcs(plan) {
+  const { profile } = plan;
+  const dtSurgery = new Date(profile.surgeryDate);
+  const events = [];
+
+  // Weekly prehab blocks leading up to surgery (once per week)
+  const weeks = Math.max(0, Math.ceil((plan.summary.untilDays || 0) / 7));
+  for (let i = weeks; i >= 1; i--) {
+    const d = new Date(dtSurgery);
+    d.setDate(d.getDate() - i * 7);
+    const start = new Date(d);
+    start.setHours(17, 0, 0, 0);
+    const end = new Date(d);
+    end.setHours(18, 0, 0, 0);
+    events.push({
+      summary: "Prehab focus: exercise + nutrition",
+      description: "Review targets and plan for the coming week.",
+      start,
+      end,
+    });
+  }
+
+  // Day before: carbohydrate loading reminder (if applicable)
+  if (profile.magnitude !== "Minor") {
+    const dayBefore = new Date(dtSurgery);
+    dayBefore.setDate(dayBefore.getDate() - 1);
+    const start = new Date(dayBefore);
+    start.setHours(18, 0, 0, 0);
+    const end = new Date(dayBefore);
+    end.setHours(19, 0, 0, 0);
+    events.push({
+      summary: "Pre-op: carbohydrate drink (if instructed)",
+      description: "Evening before ~800 mL 12–14% CHO per protocol.",
+      start,
+      end,
+    });
+  }
+
+  // Morning of surgery: fasting/meds reminder
+  const morning = new Date(dtSurgery);
+  morning.setHours(6, 0, 0, 0);
+  const morningEnd = new Date(dtSurgery);
+  morningEnd.setHours(7, 0, 0, 0);
+  events.push({
+    summary: "Day-of: fasting/medications per instructions",
+    description: "Clear fluids up to 2h; solids up to 6h unless told otherwise. Confirm meds plan.",
+    start: morning,
+    end: morningEnd,
+  });
+
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Prehab Coach//EN",
+  ];
+
+  const now = new Date();
+  for (const ev of events) {
+    const uid = `prehab-${ev.start.getTime()}-${Math.random().toString(36).slice(2)}@local`;
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:${uid}`,
+      `DTSTAMP:${toUtcBasic(now)}`,
+      `DTSTART:${toUtcBasic(ev.start)}`,
+      `DTEND:${toUtcBasic(ev.end)}`,
+      `SUMMARY:${ev.summary.replace(/\n/g, " ")}`,
+      `DESCRIPTION:${ev.description.replace(/\n/g, " ")}`,
+      "END:VEVENT"
+    );
+  }
+
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n");
 }
 
 function bindSettings() {

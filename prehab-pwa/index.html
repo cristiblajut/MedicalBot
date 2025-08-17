@@ -140,6 +140,44 @@
                 <option>Yes</option>
               </select>
             </label>
+            <label>Unintentional weight loss in last 3–6 months (%)
+              <input name="weightLossPct" type="number" min="0" max="100" step="1">
+            </label>
+            <label>Reduced intake in last week
+              <select name="reducedIntake">
+                <option value="">Select…</option>
+                <option>No</option>
+                <option>Yes</option>
+              </select>
+            </label>
+            <label>Fluid restriction (heart/kidney disease)
+              <select name="fluidRestricted">
+                <option value="">Select…</option>
+                <option>No</option>
+                <option>Yes</option>
+              </select>
+            </label>
+            <label>GLP-1 RA medication
+              <select name="glp1">
+                <option value="">Select…</option>
+                <option>No</option>
+                <option>Yes</option>
+              </select>
+            </label>
+            <label>SGLT2 inhibitor
+              <select name="sglt2">
+                <option value="">Select…</option>
+                <option>No</option>
+                <option>Yes</option>
+              </select>
+            </label>
+            <label>Anticoagulant/Antiplatelet
+              <select name="anticoag">
+                <option value="">Select…</option>
+                <option>No</option>
+                <option>Yes</option>
+              </select>
+            </label>
           </div>
         </fieldset>
 
@@ -157,6 +195,7 @@
       <div class="actions">
         <button id="print-plan">Print / Save PDF</button>
         <button id="export-plan" class="ghost">Export JSON</button>
+        <button id="export-ics" class="ghost">Export calendar (.ics)</button>
       </div>
     </section>
 
