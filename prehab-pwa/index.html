@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>Prehab Coach — ERAS + ESPEN</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%230f766e'/%3E%3Ctext x='50' y='58' font-size='46' text-anchor='middle' fill='white' font-family='Arial, Helvetica, sans-serif'%3EP%3C/text%3E%3C/svg%3E">
+  <meta name="description" content="Personalized surgical prehabilitation planner based on ERAS and ESPEN principles. Offline-capable PWA.">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="logo">🩺</span>
+      <div>
+        <h1>Prehab Coach</h1>
+        <p class="subtitle">Personalized plan based on ERAS + ESPEN principles</p>
+      </div>
+    </div>
+    <nav class="tabs" aria-label="Primary">
+      <button class="tab active" data-target="#profile">Profile</button>
+      <button class="tab" data-target="#plan">Plan</button>
+      <button class="tab" data-target="#checklists">Checklists</button>
+      <button class="tab" data-target="#education">Education</button>
+      <button class="tab" data-target="#resources">Resources</button>
+      <button class="tab" data-target="#settings" title="Install, export, reset">Settings</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="profile" class="view visible" aria-labelledby="profile-heading">
+      <h2 id="profile-heading">Patient profile</h2>
+      <form id="profile-form" class="card">
+        <fieldset>
+          <legend>Basics</legend>
+          <div class="grid">
+            <label>First name
+              <input name="firstName" autocomplete="given-name" required>
+            </label>
+            <label>Last name
+              <input name="lastName" autocomplete="family-name" required>
+            </label>
+            <label>Age (years)
+              <input name="age" type="number" min="10" max="110" required>
+            </label>
+            <label>Biological sex
+              <select name="sex" required>
+                <option value="">Select…</option>
+                <option>Female</option>
+                <option>Male</option>
+                <option>Intersex</option>
+                <option>Prefer not to say</option>
+              </select>
+            </label>
+            <label>Height (cm)
+              <input name="heightCm" type="number" min="100" max="230" required>
+            </label>
+            <label>Weight (kg)
+              <input name="weightKg" type="number" min="30" max="300" required>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Surgery</legend>
+          <div class="grid">
+            <label>Procedure category
+              <select name="surgeryType" required>
+                <option value="">Select…</option>
+                <option>Colorectal</option>
+                <option>Upper GI / HPB</option>
+                <option>Thoracic</option>
+                <option>Orthopedic (major)</option>
+                <option>Gynecology</option>
+                <option>Urology</option>
+                <option>Cardiac</option>
+                <option>Other major</option>
+              </select>
+            </label>
+            <label>Planned surgery date
+              <input name="surgeryDate" type="date" required>
+            </label>
+            <label>Magnitude
+              <select name="magnitude" required>
+                <option value="">Select…</option>
+                <option>Minor</option>
+                <option>Intermediate</option>
+                <option>Major</option>
+              </select>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Risk and lifestyle</legend>
+          <div class="grid">
+            <label>Smoker (any nicotine in last 30 days)
+              <select name="smoker" required>
+                <option value="">Select…</option>
+                <option>No</option>
+                <option>Yes</option>
+              </select>
+            </label>
+            <label>Alcohol > 2 drinks/day
+              <select name="alcoholHigh" required>
+                <option value="">Select…</option>
+                <option>No</option>
+                <option>Yes</option>
+              </select>
+            </label>
+            <label>Diabetes
+              <select name="diabetes" required>
+                <option value="">Select…</option>
+                <option>No</option>
+                <option>Yes</option>
+              </select>
+            </label>
+            <label>Known anemia (low Hb)
+              <select name="anemia" required>
+                <option value="">Select…</option>
+                <option>No</option>
+                <option>Yes</option>
+                <option>Unknown</option>
+              </select>
+            </label>
+            <label>Malnutrition risk (screened/concern)
+              <select name="malnutritionRisk" required>
+                <option value="">Select…</option>
+                <option>No</option>
+                <option>Yes</option>
+                <option>Unknown</option>
+              </select>
+            </label>
+            <label>Functional capacity (can climb 2 flights without stopping?)
+              <select name="lowCapacity" required>
+                <option value="">Select…</option>
+                <option>No</option>
+                <option>Yes</option>
+              </select>
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <button type="submit" class="primary">Generate plan</button>
+          <button type="button" id="reset-profile" class="ghost">Reset</button>
+        </div>
+        <p class="fineprint">This app provides general education aligned with ERAS and ESPEN principles. It is not medical advice. Always follow your surgical team's instructions.</p>
+      </form>
+    </section>
+
+    <section id="plan" class="view" aria-labelledby="plan-heading">
+      <h2 id="plan-heading">Personalized plan</h2>
+      <div id="plan-content" class="card"></div>
+      <div class="actions">
+        <button id="print-plan">Print / Save PDF</button>
+        <button id="export-plan" class="ghost">Export JSON</button>
+      </div>
+    </section>
+
+    <section id="checklists" class="view" aria-labelledby="checklists-heading">
+      <h2 id="checklists-heading">Checklists</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>Pre-op week checklist</h3>
+          <ul id="preop-week"></ul>
+        </div>
+        <div class="card">
+          <h3>Day before & day-of</h3>
+          <ul id="day-of"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="education" class="view" aria-labelledby="edu-heading">
+      <h2 id="edu-heading">Education</h2>
+      <div id="education-content" class="grid two"></div>
+    </section>
+
+    <section id="resources" class="view" aria-labelledby="resources-heading">
+      <h2 id="resources-heading">Resources</h2>
+      <div class="card">
+        <ul class="refs">
+          <li>ERAS Society Guidelines — see latest specialty-specific recommendations on the ERAS Society website.</li>
+          <li>ESPEN (nutrition) — perioperative nutrition screening, energy 25–30 kcal/kg/day, protein generally 1.2–1.5 g/kg/day based on clinical context.</li>
+          <li>Smoking and alcohol cessation ideally ≥4 weeks pre-op; support with behavioral and pharmacologic aids.</li>
+          <li>Pre-op fasting: clear fluids up to 2 hours; solids up to 6 hours unless otherwise instructed.</li>
+        </ul>
+        <p class="fineprint">For exact protocols, follow your center’s ERAS pathway and consult the primary literature. This app summarizes common principles without quoting proprietary content.</p>
+      </div>
+    </section>
+
+    <section id="settings" class="view" aria-labelledby="settings-heading">
+      <h2 id="settings-heading">Settings</h2>
+      <div class="card">
+        <button id="install-btn" hidden>Install app</button>
+        <button id="clear-data" class="danger">Clear all local data</button>
+        <p id="sw-status" class="fineprint"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <span>Prehab Coach</span>
+    <span>v1.0</span>
+  </footer>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>
