@@ -1,0 +1,23 @@
+{
+  "name": "Prehab Coach — ERAS + ESPEN",
+  "short_name": "Prehab",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b1213",
+  "theme_color": "#0f766e",
+  "description": "Personalized surgical prehabilitation planner based on ERAS and ESPEN principles.",
+  "icons": [
+    {
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABl8k8fAAAABHNCSVQICAgIfAhkiAAAABl0RVh0U29mdHdhcmUAUGFpbnQuTkVUIHYzLjM2qefiJQAAAC5JREFUeF7twQENAAAAwqD3T20ON6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwJ0QAAEGk3xNAAAAAElFTkSuQmCC",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQgAAAEICAYAAABnB9unAAAABHNCSVQICAgIfAhkiAAAABl0RVh0U29mdHdhcmUAUGFpbnQuTkVUIHYzLjM2qefiJQAAAC5JREFUeF7twQENAAAAwqD3T20ON6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwJ0QAAEGk3xNAAAAAElFTkSuQmCC",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
